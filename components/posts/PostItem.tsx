@@ -1,12 +1,13 @@
 import { useCallback, useMemo } from "react";
 import { useRouter } from "next/router";
 import { formatDistanceToNowStrict } from "date-fns";
-import { AiOutlineHeart, AiOutlineMessage } from 'react-icons/ai';
+import { AiOutlineHeart, AiFillHeart, AiOutlineMessage } from 'react-icons/ai';
 
 import useCurrentUser from "@/hooks/useCurrentUser";
 import useLoginModal from "@/hooks/useLoginModal";
 import useRegisterModal from "@/hooks/useRegisterModal";
 import Avatar from "../Avatar";
+import useLike from "@/hooks/useLike";
 
 interface PostItemProps {
     data: Record<string, any>;
@@ -20,6 +21,7 @@ const PostItem: React.FC<PostItemProps> = ({ data, userId }) => {
     const loginModal = useLoginModal();
 
     const { data: currentUser } = useCurrentUser();
+    const { hasLiked, toggleLike } = useLike({ postId: data.id, userId });
 
     const goToUser = useCallback((event: any) => {
         event.stopPropagation();
@@ -34,8 +36,12 @@ const PostItem: React.FC<PostItemProps> = ({ data, userId }) => {
     const onLike = useCallback((event: any) => {
         event.stopPropagation();
 
-        loginModal.onOpen();
-    }, [loginModal]);
+        if (!currentUser) {
+            loginModal.onOpen();
+        }
+        toggleLike();
+
+    }, [loginModal, currentUser, toggleLike]);
 
     const createdAt = useMemo(() => {
         if (!data?.createdAt) {
@@ -44,6 +50,8 @@ const PostItem: React.FC<PostItemProps> = ({ data, userId }) => {
 
         return formatDistanceToNowStrict(new Date(data.createdAt));
     }, [data?.createdAt])
+
+    const LikeIcon = hasLiked ? AiFillHeart : AiOutlineHeart;
 
     return (
         <div onClick={goToPost}
@@ -81,9 +89,9 @@ const PostItem: React.FC<PostItemProps> = ({ data, userId }) => {
                             </p>
                         </div>
                         <div onClick={onLike} className="flex flex-row items-center text-neutral-500 gap-2 cursor-pointer transition hover:text-red-500">
-                            <AiOutlineHeart size={20} />
+                            <LikeIcon color={hasLiked ? 'red' : ''} size={20} />
                             <p>
-                                {data.comments?.length || 0}
+                                {data.likedIds.length}
                             </p>
                         </div>
                     </div>
